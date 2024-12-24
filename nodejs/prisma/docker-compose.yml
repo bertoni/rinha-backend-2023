@@ -1,0 +1,140 @@
+version: '3.5'
+services:
+  db:
+    image: postgres:12-alpine
+    hostname: db
+    command: postgres -c 'max_connections=480' -c 'shared_buffers=900MB' -c 'effective_cache_size=900MB'
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: pgdb
+    network_mode: host
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.6'
+          memory: '1GB'
+  
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+      - api4
+      - api5
+      - api6
+      - api7
+      - api8
+    ports:
+      - "9999:9999"
+    network_mode: host
+    extra_hosts:
+      - api1:127.0.0.1
+      - api2:127.0.0.1
+      - api3:127.0.0.1
+      - api4:127.0.0.1
+      - api5:127.0.0.1
+      - api6:127.0.0.1
+      - api7:127.0.0.1
+      - api8:127.0.0.1
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.8GB'
+
+  api1: &app
+    build:
+      context: .
+    hostname: api1
+    restart: always
+    ports:
+      - "3456"
+    env_file: 
+      -  path: .env
+    depends_on:
+      - db
+    network_mode: host
+    extra_hosts:
+      - db:127.0.0.1
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.15GB'
+  
+  api2:
+    <<: *app
+    hostname: api2
+    ports:
+      - "3457"
+    environment:
+      PORT: 3457
+  
+  api3:
+    <<: *app
+    hostname: api3
+    ports:
+      - "3458"
+    environment:
+      PORT: 3458
+  
+  api4:
+    <<: *app
+    hostname: api4
+    ports:
+      - "3459"
+    environment:
+      PORT: 3459
+
+  api5:
+    <<: *app
+    hostname: api5
+    ports:
+      - "3556"
+    environment:
+      PORT: 3556
+
+  api6:
+    <<: *app
+    hostname: api6
+    ports:
+      - "3557"
+    environment:
+      PORT: 3557
+
+  api7:
+    <<: *app
+    hostname: api7
+    ports:
+      - "3558"
+    environment:
+      PORT: 3558
+
+  api8:
+    <<: *app
+    hostname: api8
+    ports:
+      - "3559"
+    environment:
+      PORT: 3559
