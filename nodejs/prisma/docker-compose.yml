@@ -67,6 +67,9 @@ services:
       - "3456"
     env_file: 
       -  path: .env
+    environment:
+      SHOW_LOG: false
+      DATABASE_URL: postgresql://pguser:pgpass@db:5432/pgdb?schema=public&connection_limit=60&pool_timeout=30
     depends_on:
       - db
     network_mode: host
