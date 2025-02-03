@@ -22,3 +22,24 @@ make stack-down args=nodejs/prisma
 ```
 make run-gatling
 ```
+
+
+## HTTP Enables
+
+POST http://localhost:9999/pessoas
+Content-Type: application/json
+
+{"apelido":"foo1","nome":"baa","nascimento":"2000-01-01","stack":["C","C#","Java","Node","PHP","Ruby"]}
+
+GET http://localhost:9999/pessoas/75597694-4648-4d03-b179-77d192548b06
+
+
+GET http://localhost:9999/pessoas?t=PHP
+
+GET http://localhost:9999/contagem-pessoas
+
+
+# Check Poll Consumption
+```
+docker exec -it kotlin-db-1 psql -d pgdb -U pguser -c 'SELECT COUNT(1) FROM pg_stat_activity;'
+```

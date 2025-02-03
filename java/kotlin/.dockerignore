@@ -1,0 +1,6 @@
+HELP.md
+build/
+docker-compose.yml
+Dockerfile
+.idea/
+.gitignore

@@ -1,0 +1,170 @@
+version: '3.5'
+services:
+  db:
+    image: postgres:12-alpine
+    hostname: db
+    command: postgres -c 'max_connections=1000' -c 'superuser_reserved_connections=3' -c 'shared_buffers=1.8GB' -c 'effective_cache_size=1.8GB' -c 'fsync=off' -c 'synchronous_commit=off'
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: pgdb
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.95'
+          memory: '2GB'
+        reservations:
+          cpus: '0.9'
+          memory: '1.95GB'
+    networks:
+      - rinha
+  
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./uuid.conf:/etc/nginx/conf.d/uuid.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+    links:
+      - api1
+      - api2
+      - api3
+    ports:
+      - "9999:9999"
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.25GB'
+        reservations:
+          cpus: '0.05'
+          memory: '0.2GB'
+    networks:
+      - rinha
+
+  api1: &app
+    build:
+      context: .
+    image: rinha-api
+    platform: linux/x86_64
+    hostname: api1
+    restart: always
+    ports:
+      - "3401:3401"
+    env_file: 
+      -  path: .env
+    environment:
+      PORT: 3401
+      SHOW_LOG: false
+      FAKE_RESPONSE: false
+      CLUSTER_WORKERS: 5
+      DATABASE_URL: postgresql://pguser:pgpass@db:5432/pgdb?schema=public&connection_limit=65&pool_timeout=30
+    depends_on:
+      - db
+    links:
+      - db
+    healthcheck:
+      test: curl --fail http://localhost:3401/health || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: '0.25GB'
+        reservations:
+          cpus: '0.1'
+          memory: '0.2GB'
+    networks:
+      - rinha
+  
+  api2:
+    <<: *app
+    hostname: api2
+    ports:
+      - "3402:3402"
+    healthcheck:
+      test: curl --fail http://localhost:3402/health || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+    environment:
+      PORT: 3402
+      SHOW_LOG: false
+      FAKE_RESPONSE: false
+      CLUSTER_WORKERS: 5
+      DATABASE_URL: postgresql://pguser:pgpass@db:5432/pgdb?schema=public&connection_limit=65&pool_timeout=30
+  
+  api3:
+    <<: *app
+    hostname: api3
+    ports:
+      - "3403:3403"
+    healthcheck:
+      test: curl --fail http://localhost:3403/health || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+    environment:
+      PORT: 3403
+      SHOW_LOG: false
+      FAKE_RESPONSE: false
+      CLUSTER_WORKERS: 5
+      DATABASE_URL: postgresql://pguser:pgpass@db:5432/pgdb?schema=public&connection_limit=65&pool_timeout=30
+
+  gatling:
+    build:
+      context: ./../../gatling/
+    image: rinha-gatling
+    volumes:
+      - ./../../gatling/user-files/results:/gatling/user-files/results
+      - ./../../gatling/user-files/simulations:/gatling/user-files/simulations
+    environment:
+      APPHOST: "nginx:9999"
+    depends_on:
+      - nginx
+    links:
+      - nginx
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '2GB'
+        reservations:
+          cpus: '0.45'
+          memory: '2GB'
+    networks:
+      - rinha
+
+networks:
+  rinha:
+    driver: bridge

@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model pessoa {
+  id         String  @unique @db.Uuid
+  apelido    String  @db.VarChar(32)
+  nome       String  @db.VarChar(100)
+  nascimento String  @db.VarChar(10)
+  stack      String?
+  searchable String?
+
+  @@index([searchable(ops: raw("gist_trgm_ops"))], map: "pessoa_search", type: Gist)
+}

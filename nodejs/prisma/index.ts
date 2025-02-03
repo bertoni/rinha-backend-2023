@@ -1,5 +1,6 @@
 import express, { Express, NextFunction, Request, Response, Router } from 'express'
 import cluster from 'cluster'
+// import uuid from 'uuid-random'
 import { Prisma, PrismaClient } from '@prisma/client'
 
 const PORT = process.env.PORT
@@ -11,14 +12,16 @@ if (!SHOW_LOG) {
 }
 
 const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
+  log: SHOW_LOG ? ['query', 'info', 'warn', 'error'] : [],
 })
 
-prisma.$on('query' as never, (e: Prisma.QueryEvent) => {
-  console.log('Query: ' + e.query)
-  console.log('Params: ' + e.params)
-  console.log('Duration: ' + e.duration + 'ms')
-})
+if (SHOW_LOG) {
+  prisma.$on('query' as never, (e: Prisma.QueryEvent) => {
+    console.log('Query: ' + e.query)
+    console.log('Params: ' + e.params)
+    console.log('Duration: ' + e.duration + 'ms')
+  })
+}
 
 type PessoaProp = {
   id: string

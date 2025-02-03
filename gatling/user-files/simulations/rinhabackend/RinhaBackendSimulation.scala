@@ -9,8 +9,12 @@ import io.gatling.http.Predef._
 class RinhaBackendSimulation
   extends Simulation {
 
+  val host = sys.env.getOrElse("APPHOST", "localhost:3000")
+
+  println("http://" + host)
+
   val httpProtocol = http
-    .baseUrl("http://localhost:9999")
+    .baseUrl("http://" + host)
     .userAgentHeader("Agente do Caos - 2023")
 
   val criacaoEConsultaPessoas = scenario("Criação E Talvez Consulta de Pessoas")

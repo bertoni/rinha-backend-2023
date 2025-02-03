@@ -71,7 +71,7 @@ services:
   api1: &app
     build:
       context: .
-    image: prisma-api
+    image: rinha-api
     hostname: api1
     restart: always
     ports:
